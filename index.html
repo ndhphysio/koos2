@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>KOOS 膝關節問卷</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  height:100%;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang HK","Microsoft JhengHei",Roboto,sans-serif;
+  background:#1e3d59;
+  color:#fff;
+  overflow-x:hidden;
+}
+
+/* ── Speech unlock overlay ── */
+#speech-overlay{
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.88);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  z-index:1000;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#speech-overlay .tap-icon{
+  font-size:6rem;margin-bottom:1.5rem;
+  animation:pulse 1.4s ease-in-out infinite;
+}
+#speech-overlay .tap-text{font-size:2.8rem;font-weight:bold;}
+#speech-overlay .tap-sub{font-size:1.3rem;margin-top:.8rem;opacity:.7;}
+@keyframes pulse{
+  0%,100%{transform:scale(1);opacity:1}
+  50%{transform:scale(1.18);opacity:.65}
+}
+
+/* ── No-speech banner ── */
+#no-speech-banner{
+  display:none;position:fixed;top:0;left:0;right:0;
+  background:#e74c3c;color:#fff;text-align:center;
+  padding:.7rem;font-size:1.2rem;z-index:500;
+}
+
+/* ── App container ── */
+#app{
+  min-height:100vh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:flex-start;
+  padding:1rem .7rem 2rem;
+}
+
+/* ── Header ── */
+.header-title{font-size:1.8rem;font-weight:bold;text-align:center;margin-top:.4rem;}
+.header-sub{font-size:1.1rem;text-align:center;opacity:.75;margin-top:.2rem;margin-bottom:.8rem;}
+
+/* ── Progress ── */
+#progress-area{width:100%;max-width:700px;margin-bottom:1rem;}
+#progress-text{font-size:1.6rem;font-weight:bold;text-align:center;margin-bottom:.5rem;}
+#progress-bar-bg{width:100%;height:12px;background:rgba(255,255,255,.2);border-radius:6px;overflow:hidden;}
+#progress-bar-fill{height:100%;width:0;background:#17b978;border-radius:6px;transition:width .4s ease;}
+
+/* ── Question card ── */
+#question-card{
+  background:#fff;color:#222;border-radius:16px;
+  padding:1.6rem 1.2rem 1rem;
+  width:100%;max-width:700px;text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+  margin-bottom:1.2rem;
+}
+#question-number{font-size:1.2rem;color:#999;margin-bottom:.35rem;font-weight:bold;}
+#question-category{font-size:1.1rem;color:#e67e22;font-weight:bold;margin-bottom:.3rem;}
+#question-text{font-size:2rem;font-weight:bold;line-height:1.75;}
+
+/* ── Button row ── */
+.btn-row{
+  display:flex;justify-content:center;gap:.6rem;margin-top:1rem;flex-wrap:wrap;
+}
+.card-btn{
+  display:inline-flex;align-items:center;gap:.3rem;
+  padding:.6rem 1.8rem;
+  background:#ececec;color:#555;border:none;border-radius:25px;
+  font-size:1.3rem;cursor:pointer;transition:background .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.card-btn:hover{background:#ddd;}
+.card-btn.active{background:#ffeaa7;color:#856404;}
+#prev-btn{display:none;background:#dfe6e9;color:#2d3436;}
+#prev-btn:hover{background:#b2bec3;}
+
+/* ── Explanation panel (question level) ── */
+#explanation-panel{
+  display:none;
+  background:#fff9e6;border:2px solid #f0d060;border-radius:12px;
+  padding:1.2rem 1rem;margin-top:1rem;text-align:left;
+  animation:fadeSlideDown .3s ease;
+}
+@keyframes fadeSlideDown{
+  from{opacity:0;transform:translateY(-10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+.explain-text{font-size:1.4rem;line-height:1.8;color:#333;}
+.explain-listen-btn{
+  display:inline-flex;align-items:center;gap:.3rem;
+  margin-top:.8rem;padding:.4rem 1.2rem;
+  background:#f0d060;color:#6b5900;border:none;border-radius:20px;
+  font-size:1.1rem;cursor:pointer;transition:background .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.explain-listen-btn:hover{background:#e6c340;}
+
+/* ── Answers area ── */
+#answers-area{
+  width:100%;max-width:700px;
+  display:grid;grid-template-columns:1fr;gap:.75rem;
+}
+
+/* ── Option wrapper ── */
+.option-wrapper{display:flex;flex-direction:column;}
+.option-main-row{display:flex;gap:.5rem;}
+.option-main-row .answer-btn{flex:1;}
+.option-explain-btn{
+  min-width:3.5rem;padding:0 0.6rem;border:none;border-radius:14px;
+  background:#f0d060;color:#6b5900;font-size:1.2rem;font-weight:bold;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:0.2rem;
+  transition:background .2s,transform .15s;
+  box-shadow:0 5px 0 rgba(0,0,0,.15);
+  -webkit-tap-highlight-color:transparent;
+  flex-shrink:0;
+  white-space:nowrap;
+}
+.option-explain-btn:hover{background:#e6c340;}
+.option-explain-btn:active{transform:scale(.96);}
+.option-explain-btn.active{background:#ffd000;box-shadow:0 0 0 3px #fff,0 5px 0 rgba(0,0,0,.15);}
+
+.option-explain-panel{
+  display:none;
+  background:#fff9e6;color:#333;border:2px solid #f0d060;border-radius:10px;
+  padding:.8rem 1rem;margin-top:.4rem;text-align:left;
+  animation:fadeSlideDown .3s ease;
+}
+.option-explain-panel .explain-text{font-size:1.2rem;line-height:1.7;color:#333;}
+.option-explain-panel .explain-listen-btn{
+  margin-top:.5rem;padding:.3rem 1rem;font-size:1rem;
+}
+
+/* ── Answer buttons ── */
+.answer-btn{
+  border:none;border-radius:14px;
+  padding:1.2rem 1rem;
+  font-size:1.5rem;font-weight:bold;
+  color:#fff;cursor:pointer;
+  transition:transform .15s,opacity .15s,box-shadow .3s,filter .3s;
+  box-shadow:0 5px 0 rgba(0,0,0,.22);
+  text-align:center;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  min-height:4.2rem;
+  display:flex;align-items:center;justify-content:center;
+  gap:0.5rem;position:relative;
+}
+.answer-btn:active:not(.locked){transform:scale(.96);}
+.answer-btn.locked{pointer-events:none;opacity:.35;filter:grayscale(.3);}
+.answer-btn.selected{
+  transform:scale(1.04);opacity:1!important;filter:none!important;
+  box-shadow:0 0 0 5px #fff,0 5px 0 rgba(0,0,0,.22);
+}
+
+.answer-btn.glow{
+  animation:glowPulse .7s ease-in-out infinite alternate;
+  z-index:10;transform:scale(1.04);
+}
+@keyframes glowPulse{
+  0%{
+    box-shadow:0 0 12px rgba(255,255,255,0.6),0 0 24px rgba(255,255,255,0.3),0 5px 0 rgba(0,0,0,.22);
+    filter:brightness(1.15);
+  }
+  100%{
+    box-shadow:0 0 24px rgba(255,255,255,1),0 0 48px rgba(255,255,255,0.5),0 0 72px rgba(255,255,255,0.2),0 5px 0 rgba(0,0,0,.22);
+    filter:brightness(1.35);
+  }
+}
+
+.clr-green{background:#26890c;}
+.clr-blue{background:#1368ce;}
+.clr-gold{background:#d89e00;}
+.clr-orange{background:#e67e22;}
+.clr-red{background:#e21b3c;}
+
+/* ── Result screen ── */
+#result-screen{display:none;width:100%;max-width:700px;text-align:center;}
+.result-card{
+  background:#fff;color:#333;border-radius:16px;
+  padding:2rem 1.4rem;
+  box-shadow:0 8px 32px rgba(0,0,0,.3);
+  margin-bottom:1.5rem;
+}
+.result-msg{font-size:1.6rem;line-height:1.9;margin-bottom:1.8rem;text-align:left;}
+.result-scores{font-size:2rem;font-weight:bold;color:#1e3d59;}
+.result-scores span{display:block;margin:.6rem 0;}
+.result-credit{font-size:1rem;color:#aaa;margin-top:1.4rem;}
+#restart-btn{
+  padding:1.2rem 3rem;background:#17b978;color:#fff;
+  border:none;border-radius:30px;font-size:1.8rem;font-weight:bold;
+  cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.15);
+  transition:background .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+#restart-btn:hover{background:#129661;}
+
+#quiz-area{width:100%;display:flex;flex-direction:column;align-items:center;}
+
+@media(min-width:600px){
+  #question-text{font-size:2.2rem;}
+  .answer-btn{font-size:1.7rem;padding:1.4rem 1.2rem;}
+  .result-msg{font-size:1.8rem;}
+  .result-scores{font-size:2.4rem;}
+  .explain-text{font-size:1.6rem;}
+}
+</style>
+</head>
+<body>
+
+<div id="speech-overlay">
+  <div class="tap-icon">🔊</div>
+  <div class="tap-text">點按以啟用語音</div>
+  <div class="tap-sub">Tap to enable voice</div>
+</div>
+
+<div id="no-speech-banner">此瀏覽器不支援語音朗讀</div>
+
+<div id="app">
+  <div class="header-title">KOOS 膝關節問卷</div>
+  <div class="header-sub">新界東醫院聯網物理治療部</div>
+
+  <div id="quiz-area">
+    <div id="progress-area">
+      <div id="progress-text"></div>
+      <div id="progress-bar-bg"><div id="progress-bar-fill"></div></div>
+    </div>
+    <div id="question-card">
+      <div id="question-number"></div>
+      <div id="question-category"></div>
+      <div id="question-text"></div>
+      <div class="btn-row">
+        <button class="card-btn" id="prev-btn">⬅️ 返回上一題</button>
+        <button class="card-btn" id="replay-btn">🔊 重播</button>
+        <button class="card-btn" id="explain-btn">💡 解釋</button>
+      </div>
+      <div id="explanation-panel">
+        <div class="explain-text" id="explain-text"></div>
+        <button class="explain-listen-btn" id="explain-listen-btn">🔊 再聽一次解釋</button>
+      </div>
+    </div>
+    <div id="answers-area"></div>
+  </div>
+
+  <div id="result-screen">
+    <div class="result-card">
+      <div class="result-msg" id="result-msg"></div>
+      <div class="result-scores" id="result-scores"></div>
+      <div class="result-credit">新界東醫院聯網物理治療部製作</div>
+    </div>
+    <button id="restart-btn">🔄 重新開始</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ═══════════════════ DATA (KOOS Questions) ═══════════════════ */
+  var questions = [
+    // --- 第一部分：疼痛 (Pain: P1 to P9) ---
+    {
+      id: 1, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '你多常感到膝痛？',
+      explanation: '呢題想問你平時有幾經常會覺得膝頭哥痛？',
+      options: [
+        { label: '從不', value: 0, explanation: '完全冇試過膝痛。' },
+        { label: '每月一次', value: 1, explanation: '一個月大約痛一次。' },
+        { label: '每週一次', value: 2, explanation: '一個星期大約痛一次。' },
+        { label: '每日一次', value: 3, explanation: '基本上每日都會痛一次。' },
+        { label: '經常', value: 4, explanation: '成日都感到膝痛。' }
+      ]
+    },
+    {
+      id: 2, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，以膝關節為中心扭動或轉動身體時會感到什麼程度的痛楚？',
+      explanation: '呢題問你扭動或者轉動身體嗰陣，膝頭痛得有幾犀利？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '轉身完全唔痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '有少少痛，但好輕微。' },
+        { label: '頗為疼痛', value: 2, explanation: '痛楚幾明顯。' },
+        { label: '非常疼痛', value: 3, explanation: '痛得好交關。' },
+        { label: '極度疼痛', value: 4, explanation: '痛到頂唔順、極度痛楚。' }
+      ]
+    },
+    {
+      id: 3, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，完全伸直膝關節時會感到什麼程度的痛楚？',
+      explanation: '呢題問你將隻腳伸到最直嗰陣，膝頭痛唔痛？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '伸直完全冇痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '伸直時有輕微痛感。' },
+        { label: '頗為疼痛', value: 2, explanation: '伸直時有明顯痛楚。' },
+        { label: '非常疼痛', value: 3, explanation: '伸直時好痛。' },
+        { label: '極度疼痛', value: 4, explanation: '極度痛楚，好難伸直。' }
+      ]
+    },
+    {
+      id: 4, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，完全彎曲膝關節時會感到什麼程度的痛楚？',
+      explanation: '呢題問你將膝頭哥彎曲到最埋嗰陣，痛唔痛？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '彎曲完全冇痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '彎曲時有輕微痛感。' },
+        { label: '頗為疼痛', value: 2, explanation: '彎曲時幾痛。' },
+        { label: '非常疼痛', value: 3, explanation: '彎曲時好痛。' },
+        { label: '極度疼痛', value: 4, explanation: '極度痛楚。' }
+      ]
+    },
+    {
+      id: 5, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，在平地步行時會感到什麼程度的痛楚？',
+      explanation: '呢題問你在平地行路嗰陣，膝頭痛唔痛？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '平路行路完全冇痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '行平路有輕微痛。' },
+        { label: '頗為疼痛', value: 2, explanation: '行平路有明顯痛楚。' },
+        { label: '非常疼痛', value: 3, explanation: '行平路好痛。' },
+        { label: '極度疼痛', value: 4, explanation: '痛到行唔到平路。' }
+      ]
+    },
+    {
+      id: 6, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，上或下樓梯時會感到什麼程度的痛楚？',
+      explanation: '呢題問你行樓梯或者落樓梯嗰陣，膝頭痛唔痛？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '上落樓梯完全冇痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '上落樓梯有少少痛。' },
+        { label: '頗為疼痛', value: 2, explanation: '上落樓梯幾痛。' },
+        { label: '非常疼痛', value: 3, explanation: '上落樓梯好痛。' },
+        { label: '極度疼痛', value: 4, explanation: '痛到好難上落樓梯。' }
+      ]
+    },
+    {
+      id: 7, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，晚上就寢時會感到什麼程度的痛楚？',
+      explanation: '呢題問你夜晚瞓覺或者躺在床上嗰陣，膝頭會唔會痛？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '瞓覺完全冇痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '夜晚有輕微痛楚。' },
+        { label: '頗為疼痛', value: 2, explanation: '夜晚痛得幾明顯。' },
+        { label: '非常疼痛', value: 3, explanation: '夜晚痛到好難瞓。' },
+        { label: '極度疼痛', value: 4, explanation: '極度痛楚，影響睡眠。' }
+      ]
+    },
+    {
+      id: 8, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，坐下或躺下時會感到什麼程度的痛楚？',
+      explanation: '呢題問你坐低或者躺低嗰陣，膝頭痛唔痛？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '坐低躺低完全冇痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '坐低躺低有少少痛。' },
+        { label: '頗為疼痛', value: 2, explanation: '坐低躺低幾痛。' },
+        { label: '非常疼痛', value: 3, explanation: '坐低躺低好痛。' },
+        { label: '極度疼痛', value: 4, explanation: '痛到好難坐低或躺低。' }
+      ]
+    },
+    {
+      id: 9, section: 'pain', sectionName: '第一部分：疼痛 (KOOS-Pain)',
+      text: '過去一星期，挺直站立時會感到什麼程度的痛楚？',
+      explanation: '呢題問你企直個人嗰陣，膝頭痛唔痛？',
+      options: [
+        { label: '沒有痛楚', value: 0, explanation: '企直完全冇痛。' },
+        { label: '輕微疼痛', value: 1, explanation: '企直時有少少痛。' },
+        { label: '頗為疼痛', value: 2, explanation: '企直時幾痛。' },
+        { label: '非常疼痛', value: 3, explanation: '企直時好痛。' },
+        { label: '極度疼痛', value: 4, explanation: '極度痛楚，企唔到直。' }
+      ]
+    },
+
+    // --- 第二部分：日常生活困難度 (PS: PS1 to PS7) ---
+    {
+      id: 10, section: 'ps', sectionName: '第二部分：日常生活困難度 (KOOS-PS)',
+      text: '過去一星期，你在起床時使你感到有多困難？',
+      explanation: '呢題問你朝早起身或者離開床鋪嗰陣，膝頭使唔使使到好大力、有幾困難？',
+      options: [
+        { label: '沒有困難', value: 0, explanation: '起身完全冇困難。' },
+        { label: '少許困難', value: 1, explanation: '起身有少少困難。' },
+        { label: '頗大困難', value: 2, explanation: '起身有頗大困難。' },
+        { label: '非常困難', value: 3, explanation: '起身好困難。' },
+        { label: '極大困難', value: 4, explanation: '極之困難先起到身。' }
+      ]
+    },
+    {
+      id: 11, section: 'ps', sectionName: '第二部分：日常生活困難度 (KOOS-PS)',
+      text: '過去一星期，你在穿襪子或襪褲時使你感到有多困難？',
+      explanation: '呢題問你穿襪或者穿襪褲嗰陣，彎膝頭有冇困難？',
+      options: [
+        { label: '沒有困難', value: 0, explanation: '穿襪完全冇困難。' },
+        { label: '少許困難', value: 1, explanation: '穿襪有少少困難。' },
+        { label: '頗大困難', value: 2, explanation: '穿襪有頗大困難。' },
+        { label: '非常困難', value: 3, explanation: '穿襪好困難。' },
+        { label: '極大困難', value: 4, explanation: '極之困難，自己好難穿到。' }
+      ]
+    },
+    {
+      id: 12, section: 'ps', sectionName: '第二部分：日常生活困難度 (KOOS-PS)',
+      text: '過去一星期，從坐姿站起時使你感到有多困難？',
+      explanation: '呢題問你由凳或者梳化起身嗰陣，有幾困難？',
+      options: [
+        { label: '沒有困難', value: 0, explanation: '坐姿起身完全冇困難。' },
+        { label: '少許困難', value: 1, explanation: '起身有少少困難。' },
+        { label: '頗大困難', value: 2, explanation: '起身有頗大困難。' },
+        { label: '非常困難', value: 3, explanation: '起身好困難。' },
+        { label: '極大困難', value: 4, explanation: '極之困難先起身。' }
+      ]
+    },
+    {
+      id: 13, section: 'ps', sectionName: '第二部分：日常生活困難度 (KOOS-PS)',
+      text: '過去一星期，彎腰至地上或在地上檢起物品時使你感到有多困難？',
+      explanation: '呢題問你彎腰去地下執嘢嗰陣，有幾困難？',
+      options: [
+        { label: '沒有困難', value: 0, explanation: '執嘢完全冇困難。' },
+        { label: '少許困難', value: 1, explanation: '執嘢有少少困難。' },
+        { label: '頗大困難', value: 2, explanation: '執嘢有頗大困難。' },
+        { label: '非常困難', value: 3, explanation: '執嘢好困難。' },
+        { label: '極大困難', value: 4, explanation: '極之困難，好難彎腰執嘢。' }
+      ]
+    },
+    {
+      id: 14, section: 'ps', sectionName: '第二部分：日常生活困難度 (KOOS-PS)',
+      text: '過去一星期，轉動或扭動受傷的膝關節時使你感到有多困難？',
+      explanation: '呢題問你轉動膝頭嗰陣，有幾困難？',
+      options: [
+        { label: '沒有困難', value: 0, explanation: '轉動膝頭完全冇困難。' },
+        { label: '少許困難', value: 1, explanation: '轉動有少少困難。' },
+        { label: '頗大困難', value: 2, explanation: '轉動有頗大困難。' },
+        { label: '非常困難', value: 3, explanation: '轉動好困難。' },
+        { label: '極大困難', value: 4, explanation: '極之困難。' }
+      ]
+    },
+    {
+      id: 15, section: 'ps', sectionName: '第二部分：日常生活困難度 (KOOS-PS)',
+      text: '過去一星期，跪下時使你感到有多困難？',
+      explanation: '呢題問你跪落地嗰陣，有幾困難？',
+      options: [
+        { label: '沒有困難', value: 0, explanation: '跪下完全冇困難。' },
+        { label: '少許困難', value: 1, explanation: '跪下有少少困難。' },
+        { label: '頗大困難', value: 2, explanation: '跪下有頗大困難。' },
+        { label: '非常困難', value: 3, explanation: '跪下好困難。' },
+        { label: '極大困難', value: 4, explanation: '極之困難，完全跪唔到。' }
+      ]
+    },
+    {
+      id: 16, section: 'ps', sectionName: '第二部分：日常生活困難度 (KOOS-PS)',
+      text: '過去一星期，蹲坐時使你感到有多困難？',
+      explanation: '呢題問你蹲低坐喺度嗰陣，有幾困難？',
+      options: [
+        { label: '沒有困難', value: 0, explanation: '蹲坐完全冇困難。' },
+        { label: '少許困難', value: 1, explanation: '蹲坐有少少困難。' },
+        { label: '頗大困難', value: 2, explanation: '蹲坐有頗大困難。' },
+        { label: '非常困難', value: 3, explanation: '蹲坐好困難。' },
+        { label: '極大困難', value: 4, explanation: '極之困難，蹲唔到。' }
+      ]
+    },
+
+    // --- 第三部分：膝關節對生活質量嘅影響 (QOL: Q1 to Q4) ---
+    {
+      id: 17, section: 'qol', sectionName: '第三部分：生活質量影響 (KOOS-QOL)',
+      text: '你多常注意到你的膝關節問題？',
+      explanation: '呢題問你平日有幾經常會為意到自己膝頭有問題？',
+      options: [
+        { label: '從不', value: 0, explanation: '完全冇為意過膝頭問題。' },
+        { label: '每月一次', value: 1, explanation: '一個月大約為意到一次。' },
+        { label: '每星期一次', value: 2, explanation: '一個星期大約為意到一次。' },
+        { label: '每日一次', value: 3, explanation: '每日都會為意到。' },
+        { label: '經常', value: 4, explanation: '成日都注意到膝頭問題。' }
+      ]
+    },
+    {
+      id: 18, section: 'qol', sectionName: '第三部分：生活質量影響 (KOOS-QOL)',
+      text: '你是否有改變生活模式來避免一些有機會傷及膝關節的活動？',
+      explanation: '呢題問你有冇為左保護膝頭，而改變左平時嘅生活方式或避開某些活動？',
+      options: [
+        { label: '沒有改變', value: 0, explanation: '生活模式完全冇改變。' },
+        { label: '少許改變', value: 1, explanation: '有少少改變。' },
+        { label: '頗大改變', value: 2, explanation: '有頗大改變。' },
+        { label: '很大改變', value: 3, explanation: '有很大改變。' },
+        { label: '完全改變', value: 4, explanation: '生活方式完全改變晒。' }
+      ]
+    },
+    {
+      id: 19, section: 'qol', sectionName: '第三部分：生活質量影響 (KOOS-QOL)',
+      text: '你是否對你的膝關節缺乏信心？',
+      explanation: '呢題問你對自己膝頭嘅穩固程度或者康復情況有冇信心？',
+      options: [
+        { label: '完全沒有', value: 0, explanation: '完全冇缺乏信心（即係好有信心）。' },
+        { label: '少許', value: 1, explanation: '少許缺乏信心。' },
+        { label: '普通', value: 2, explanation: '一般普通。' },
+        { label: '嚴重', value: 3, explanation: '嚴重缺乏信心。' },
+        { label: '極度', value: 4, explanation: '極度缺乏信心。' }
+      ]
+    },
+    {
+      id: 20, section: 'qol', sectionName: '第三部分：生活質量影響 (KOOS-QOL)',
+      text: '總括來說，你的膝關節對你的生活造成多大影響？',
+      explanation: '呢題問你膝頭問題對你整體生活造成幾大影響？',
+      options: [
+        { label: '完全沒有', value: 0, explanation: '完全冇影響。' },
+        { label: '少許', value: 1, explanation: '有少許影響。' },
+        { label: '頗大', value: 2, explanation: '有頗大影響。' },
+        { label: '非常大', value: 3, explanation: '有非常大影響。' },
+        { label: '極大', value: 4, explanation: '造成極大影響。' }
+      ]
+    }
+  ];
+
+  /* ═══════════════════ SCORE LOOKUP TABLES ═══════════════════ */
+  var painScoreTable = [100, 97, 94, 92, 89, 86, 83, 81, 78, 75, 72, 69, 67, 64, 61, 58, 56, 53, 50, 47, 44, 42, 39, 36, 33, 31, 28, 25, 22, 19, 17, 14, 11, 8, 6, 3, 0];
+  var psScoreTable   = [100, 94, 90, 85, 81, 78, 75, 73, 70, 68, 66, 65, 63, 61, 60, 58, 56, 54, 52, 49, 46, 42, 38, 33, 28, 22, 16, 8, 0];
+  var qolScoreTable  = [100, 94, 88, 81, 75, 69, 63, 56, 50, 44, 38, 31, 25, 19, 13, 6, 0];
+
+  var BTN_COLORS_5 = ['clr-green', 'clr-blue', 'clr-gold', 'clr-orange', 'clr-red'];
+
+  /* ═══════════════════ STATE ═══════════════════ */
+  var currentIndex   = 0;
+  var answers        = {};
+  var locked         = false;
+  var speechEnabled  = false;
+  var speechOK       = ('speechSynthesis' in window);
+  var repeatTimer    = null;
+  var speechSeqId    = 0;
+  var explanationOpen= false;
+
+  var expLoopId      = 0;
+  var expLoopTimer   = null;
+
+  /* ═══════════════════ DOM REFS ═══════════════════ */
+  var elOverlay      = document.getElementById('speech-overlay');
+  var elBanner       = document.getElementById('no-speech-banner');
+  var elProgressTxt  = document.getElementById('progress-text');
+  var elProgressBar  = document.getElementById('progress-bar-fill');
+  var elQNum         = document.getElementById('question-number');
+  var elQCat         = document.getElementById('question-category');
+  var elQText        = document.getElementById('question-text');
+  var elPrevBtn      = document.getElementById('prev-btn');
+  var elReplay       = document.getElementById('replay-btn');
+  var elExplainBtn   = document.getElementById('explain-btn');
+  var elExplainPanel = document.getElementById('explanation-panel');
+  var elExplainText  = document.getElementById('explain-text');
+  var elExplainListen= document.getElementById('explain-listen-btn');
+  var elAnswers      = document.getElementById('answers-area');
+  var elQuiz         = document.getElementById('quiz-area');
+  var elResult       = document.getElementById('result-screen');
+  var elResultMsg    = document.getElementById('result-msg');
+  var elResultScore  = document.getElementById('result-scores');
+  var elRestart      = document.getElementById('restart-btn');
+
+  /* ═══════════════════════════════════════════════════
+     CANTONESE VOICE SELECTION
+     ═══════════════════════════════════════════════════ */
+  function applyVoice(utter){
+    var voices = window.speechSynthesis.getVoices();
+    var cantoneseVoice = null;
+
+    for(var i = 0; i < voices.length; i++){
+      var v = voices[i];
+      var lang = (v.lang || '').toLowerCase();
+      var name = (v.name || '').toLowerCase();
+
+      if(lang === 'zh-hk' || lang.indexOf('yue') !== -1 || name.indexOf('cantonese') !== -1 || name.indexOf('粵語') !== -1){
+        cantoneseVoice = v;
+        break;
+      }
+    }
+
+    if(!cantoneseVoice){
+      for(var i = 0; i < voices.length; i++){
+        var v = voices[i];
+        var lang = (v.lang || '').toLowerCase();
+        var name = (v.name || '').toLowerCase();
+        
+        if(lang.indexOf('zh-cn') !== -1 || name.indexOf('mandarin') !== -1 || name.indexOf('普通话') !== -1 || name.indexOf('國語') !== -1){
+          continue;
+        }
+
+        if(lang.indexOf('zh') === 0){
+          cantoneseVoice = v;
+          break;
+        }
+      }
+    }
+
+    if(cantoneseVoice){
+      utter.voice = cantoneseVoice;
+      utter.lang = cantoneseVoice.lang;
+    } else {
+      utter.lang = 'zh-HK';
+    }
+    utter.rate = 0.8;
+  }
+
+  /* ═══════════════════ HELPERS ═══════════════════ */
+  function isAnyOptionExplanationOpen(){
+    var panels = elAnswers.querySelectorAll('.option-explain-panel');
+    for(var i = 0; i < panels.length; i++){
+      if(panels[i].style.display === 'block') return true;
+    }
+    return false;
+  }
+
+  function clearAllGlow(){
+    var btns = elAnswers.querySelectorAll('.answer-btn');
+    for(var i = 0; i < btns.length; i++) btns[i].classList.remove('glow');
+  }
+
+  function startRepeatTimer(){
+    stopRepeatTimer();
+    repeatTimer = setTimeout(function(){
+      if(!locked && !explanationOpen && !isAnyOptionExplanationOpen()){
+        speakSequence();
+      }
+    }, 10000);
+  }
+
+  function stopRepeatTimer(){
+    if(repeatTimer !== null){ clearTimeout(repeatTimer); repeatTimer = null; }
+  }
+
+  /* ═══════════════════ EXPLANATION LOOP ═══════════════════ */
+  function stopExpLoop(){
+    expLoopId++;
+    if(expLoopTimer !== null){ clearTimeout(expLoopTimer); expLoopTimer = null; }
+  }
+
+  function expLoopSpeak(text, myId, cb){
+    if(myId !== expLoopId) return;
+    if(!speechOK || !speechEnabled){ if(cb) cb(); return; }
+    var utter = new SpeechSynthesisUtterance(text);
+    applyVoice(utter);
+    utter.onend   = function(){ if(myId === expLoopId && cb) cb(); };
+    utter.onerror = function(){ if(myId === expLoopId && cb) cb(); };
+    window.speechSynthesis.speak(utter);
+  }
+
+  function startExpLoop(explanationText){
+    stopExpLoop();
+    stopRepeatTimer();
+    if(speechOK) window.speechSynthesis.cancel();
+    clearAllGlow();
+    speechSeqId++;
+
+    var myId = expLoopId;
+    var qText = questions[currentIndex].text;
+
+    expLoopSpeak(explanationText, myId, function(){
+      if(myId !== expLoopId) return;
+      expLoopTimer = setTimeout(function(){
+        if(myId !== expLoopId) return;
+        expLoopRepeatCycle(myId, qText, explanationText);
+      }, 10000);
+    });
+  }
+
+  function expLoopRepeatCycle(myId, qText, eText){
+    if(myId !== expLoopId) return;
+    expLoopSpeak(qText, myId, function(){
+      if(myId !== expLoopId) return;
+      expLoopSpeak(eText, myId, function(){
+        if(myId !== expLoopId) return;
+        expLoopTimer = setTimeout(function(){
+          if(myId !== expLoopId) return;
+          expLoopRepeatCycle(myId, qText, eText);
+        }, 10000);
+      });
+    });
+  }
+
+  /* ═══════════════════ SPEECH: SEQUENCE ═══════════════════ */
+  function speakSequence(){
+    if(!speechOK || !speechEnabled) return;
+    window.speechSynthesis.cancel();
+    clearAllGlow();
+    stopRepeatTimer();
+
+    speechSeqId++;
+    var mySeqId = speechSeqId;
+    var q = questions[currentIndex];
+    var items = [];
+
+    items.push({ text: q.text, buttonIndex: -1 });
+
+    var btns = elAnswers.querySelectorAll('.answer-btn');
+    for(var i = 0; i < btns.length; i++){
+      items.push({ text: btns[i].getAttribute('data-speech'), buttonIndex: i });
+    }
+
+    var idx = 0;
+    function speakNext(){
+      if(mySeqId !== speechSeqId) return;
+      if(idx >= items.length || locked){
+        clearAllGlow();
+        if(mySeqId === speechSeqId) startRepeatTimer();
+        return;
+      }
+
+      var item = items[idx];
+      var utter = new SpeechSynthesisUtterance(item.text);
+      applyVoice(utter);
+
+      utter.onstart = function(){
+        if(mySeqId !== speechSeqId) return;
+        clearAllGlow();
+        if(item.buttonIndex >= 0){
+          var allBtns = elAnswers.querySelectorAll('.answer-btn');
+          if(allBtns[item.buttonIndex]) allBtns[item.buttonIndex].classList.add('glow');
+        }
+      };
+      utter.onend = function(){
+        if(mySeqId !== speechSeqId) return;
+        clearAllGlow();
+        idx++;
+        setTimeout(speakNext, 400);
+      };
+      utter.onerror = function(){
+        if(mySeqId !== speechSeqId) return;
+        clearAllGlow();
+        idx++;
+        setTimeout(speakNext, 400);
+      };
+
+      window.speechSynthesis.speak(utter);
+    }
+    speakNext();
+  }
+
+  /* ═══════════════════ SPEECH: RESULT ═══════════════════ */
+  function speakResult(painScore, psScore, qolScore){
+    if(!speechOK || !speechEnabled) return;
+    window.speechSynthesis.cancel();
+    stopRepeatTimer();
+    speechSeqId++;
+    var mySeqId = speechSeqId;
+
+    var lines = [
+      '非常感謝您完成了這份調查中所有的問題。',
+      '請勿關閉此頁面，並告知您的物理治療師。',
+      '疼痛分項得分是 ' + painScore + ' 分，日常生活困難度分項得分是 ' + psScore + ' 分，生活質量分項得分是 ' + qolScore + ' 分。'
+    ];
+
+    var idx = 0;
+    function speakNext(){
+      if(mySeqId !== speechSeqId) return;
+      if(idx >= lines.length) return;
+      var utter = new SpeechSynthesisUtterance(lines[idx]);
+      applyVoice(utter);
+      utter.onend = function(){
+        if(mySeqId !== speechSeqId) return;
+        idx++;
+        setTimeout(speakNext, 400);
+      };
+      utter.onerror = function(){
+        if(mySeqId !== speechSeqId) return;
+        idx++;
+        setTimeout(speakNext, 400);
+      };
+      window.speechSynthesis.speak(utter);
+    }
+    speakNext();
+  }
+
+  /* ═══════════════════ EXPLANATION (QUESTION) ═══════════════════ */
+  function openExplanation(){
+    explanationOpen = true;
+    elExplainPanel.style.display = 'block';
+    elExplainBtn.classList.add('active');
+    closeAllOptionExplanations();
+    var q = questions[currentIndex];
+    startExpLoop(q.explanation);
+  }
+
+  function closeExplanation(){
+    explanationOpen = false;
+    elExplainPanel.style.display = 'none';
+    elExplainBtn.classList.remove('active');
+  }
+
+  function toggleExplanation(){
+    if(explanationOpen){
+      closeExplanation();
+      stopExpLoop();
+      if(speechOK) window.speechSynthesis.cancel();
+      speechSeqId++;
+      startRepeatTimer();
+    } else {
+      openExplanation();
+    }
+  }
+
+  /* ═══════════════════ EXPLANATION (OPTIONS) ═══════════════════ */
+  function toggleOptionExplanation(index){
+    var panel = document.getElementById('opt-explain-' + index);
+    var allExpBtns = elAnswers.querySelectorAll('.option-explain-btn');
+    var btn = allExpBtns[index];
+
+    if(panel && panel.style.display === 'block'){
+      panel.style.display = 'none';
+      if(btn) btn.classList.remove('active');
+      stopExpLoop();
+      if(speechOK) window.speechSynthesis.cancel();
+      speechSeqId++;
+      startRepeatTimer();
+    } else {
+      closeAllOptionExplanations();
+      closeExplanation();
+      if(panel) panel.style.display = 'block';
+      if(btn) btn.classList.add('active');
+      var q = questions[currentIndex];
+      if(q.options && q.options[index]){
+        startExpLoop(q.options[index].explanation);
+      }
+    }
+  }
+
+  function closeAllOptionExplanations(){
+    var panels = elAnswers.querySelectorAll('.option-explain-panel');
+    for(var i = 0; i < panels.length; i++) panels[i].style.display = 'none';
+    var btns = elAnswers.querySelectorAll('.option-explain-btn');
+    for(var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  }
+
+  /* ═══════════════════ RENDER ═══════════════════ */
+  function renderQuestion(){
+    locked = false;
+    explanationOpen = false;
+    stopExpLoop();
+    var q = questions[currentIndex];
+
+    elProgressTxt.textContent = '第 ' + (currentIndex + 1) + ' / 20 題';
+    elProgressBar.style.width = ((currentIndex + 1) / 20 * 100) + '%';
+    elQNum.textContent = '問題 ' + (currentIndex + 1);
+    elQCat.textContent = q.sectionName;
+    elQText.textContent = q.text;
+
+    if(currentIndex > 0){
+      elPrevBtn.style.display = 'inline-flex';
+    } else {
+      elPrevBtn.style.display = 'none';
+    }
+
+    elExplainPanel.style.display = 'none';
+    elExplainBtn.classList.remove('active');
+    elExplainText.textContent = q.explanation;
+
+    elAnswers.innerHTML = '';
+
+    q.options.forEach(function(opt, i){
+      var colorClass = BTN_COLORS_5[i % BTN_COLORS_5.length];
+      addScaleOption(opt, i, colorClass);
+    });
+
+    window.scrollTo(0, 0);
+    speakSequence();
+  }
+
+  function addScaleOption(opt, index, colorClass){
+    var wrapper = document.createElement('div');
+    wrapper.className = 'option-wrapper';
+
+    var mainRow = document.createElement('div');
+    mainRow.className = 'option-main-row';
+
+    var btn = document.createElement('button');
+    btn.className = 'answer-btn ' + colorClass;
+
+    if(answers[currentIndex] !== undefined && answers[currentIndex] === opt.value){
+      btn.classList.add('selected');
+    }
+
+    var ts = document.createElement('span');
+    ts.textContent = opt.label;
+    btn.appendChild(ts);
+    btn.setAttribute('data-speech', opt.speech || opt.label);
+    btn.addEventListener('click', function(){ onAnswer(btn, opt.value); });
+    mainRow.appendChild(btn);
+
+    var optExpBtn = document.createElement('button');
+    optExpBtn.className = 'option-explain-btn';
+    optExpBtn.textContent = '💡 解釋';
+    optExpBtn.addEventListener('click', function(){ toggleOptionExplanation(index); });
+    mainRow.appendChild(optExpBtn);
+
+    wrapper.appendChild(mainRow);
+
+    var panel = document.createElement('div');
+    panel.className = 'option-explain-panel';
+    panel.id = 'opt-explain-' + index;
+
+    var expText = document.createElement('div');
+    expText.className = 'explain-text';
+    expText.textContent = opt.explanation;
+    panel.appendChild(expText);
+
+    var listenBtn = document.createElement('button');
+    listenBtn.className = 'explain-listen-btn';
+    listenBtn.textContent = '🔊 再聽一次';
+    listenBtn.addEventListener('click', function(){ startExpLoop(opt.explanation); });
+    panel.appendChild(listenBtn);
+
+    wrapper.appendChild(panel);
+    elAnswers.appendChild(wrapper);
+  }
+
+  /* ═══════════════════ ANSWER ═══════════════════ */
+  function onAnswer(btn, value){
+    if(locked) return;
+    locked = true;
+
+    stopRepeatTimer();
+    stopExpLoop();
+    speechSeqId++;
+    if(speechOK) window.speechSynthesis.cancel();
+    clearAllGlow();
+    closeExplanation();
+    closeAllOptionExplanations();
+
+    var all = elAnswers.querySelectorAll('.answer-btn');
+    for(var i = 0; i < all.length; i++) all[i].classList.add('locked');
+    btn.classList.remove('locked');
+    btn.classList.add('selected');
+
+    var optBtns = elAnswers.querySelectorAll('.option-explain-btn');
+    for(var i = 0; i < optBtns.length; i++) optBtns[i].style.pointerEvents = 'none';
+
+    answers[currentIndex] = value;
+
+    setTimeout(function(){
+      currentIndex++;
+      if(currentIndex < questions.length) renderQuestion();
+      else showResult();
+    }, 350);
+  }
+
+  /* ═══════════════════ PREVIOUS QUESTION ═══════════════════ */
+  function prevQuestion(){
+    if(currentIndex <= 0) return;
+    stopRepeatTimer();
+    stopExpLoop();
+    speechSeqId++;
+    if(speechOK) window.speechSynthesis.cancel();
+    clearAllGlow();
+    closeExplanation();
+    closeAllOptionExplanations();
+
+    currentIndex--;
+    renderQuestion();
+  }
+
+  /* ═══════════════════ RESULT ═══════════════════ */
+  function showResult(){
+    stopRepeatTimer();
+    stopExpLoop();
+    speechSeqId++;
+    if(speechOK) window.speechSynthesis.cancel();
+    clearAllGlow();
+
+    elQuiz.style.display = 'none';
+    elResult.style.display = 'block';
+
+    var painSubtotal = 0;
+    var psSubtotal = 0;
+    var qolSubtotal = 0;
+
+    questions.forEach(function(q, idx){
+      var val = (answers[idx] !== undefined) ? answers[idx] : 0;
+      if(q.section === 'pain') painSubtotal += val;
+      else if(q.section === 'ps') psSubtotal += val;
+      else if(q.section === 'qol') qolSubtotal += val;
+    });
+
+    var finalPain = painScoreTable[painSubtotal] !== undefined ? painScoreTable[painSubtotal] : 0;
+    var finalPS = psScoreTable[psSubtotal] !== undefined ? psScoreTable[psSubtotal] : 0;
+    var finalQOL = qolScoreTable[qolSubtotal] !== undefined ? qolScoreTable[qolSubtotal] : 0;
+
+    elResultMsg.textContent =
+      '非常感謝您完成了這份調查中所有的問題。' +
+      '請勿關閉此頁面，並告知您的物理治療師。';
+
+    elResultScore.innerHTML =
+      '<span>疼痛 (Pain) 分數: ' + finalPain + ' 分</span>' +
+      '<span>日常生活困難度 (PS) 分數: ' + finalPS + ' 分</span>' +
+      '<span>生活質量 (QOL) 分數: ' + finalQOL + ' 分</span>';
+
+    window.scrollTo(0, 0);
+    speakResult(finalPain, finalPS, finalQOL);
+  }
+
+  /* ═══════════════════ RESTART ═══════════════════ */
+  function restart(){
+    stopRepeatTimer();
+    stopExpLoop();
+    speechSeqId++;
+    if(speechOK) window.speechSynthesis.cancel();
+    clearAllGlow();
+    startQuiz();
+  }
+
+  /* ═══════════════════ INIT ═══════════════════ */
+  function init(){
+    if(!speechOK){
+      elOverlay.style.display = 'none';
+      elBanner.style.display = 'block';
+      startQuiz();
+    } else {
+      window.speechSynthesis.getVoices();
+      if(typeof window.speechSynthesis.onvoiceschanged !== 'undefined'){
+        window.speechSynthesis.onvoiceschanged = function(){
+          window.speechSynthesis.getVoices();
+        };
+      }
+      elOverlay.addEventListener('click', onOverlayTap);
+    }
+    elPrevBtn.addEventListener('click', prevQuestion);
+    elReplay.addEventListener('click', function(){
+      closeExplanation();
+      closeAllOptionExplanations();
+      stopExpLoop();
+      stopRepeatTimer();
+      speakSequence();
+    });
+    elExplainBtn.addEventListener('click', function(){
+      toggleExplanation();
+    });
+    elExplainListen.addEventListener('click', function(){
+      var q = questions[currentIndex];
+      startExpLoop(q.explanation);
+    });
+    elRestart.addEventListener('click', restart);
+  }
+
+  function onOverlayTap(){
+    speechEnabled = true;
+    elOverlay.style.display = 'none';
+    var dummy = new SpeechSynthesisUtterance('');
+    dummy.lang = 'zh-HK';
+    dummy.volume = 0;
+    window.speechSynthesis.speak(dummy);
+    startQuiz();
+  }
+
+  function startQuiz(){
+    currentIndex = 0;
+    answers = {};
+    elResult.style.display = 'none';
+    elQuiz.style.display = 'flex';
+    renderQuestion();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
